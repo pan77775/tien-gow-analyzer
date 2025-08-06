@@ -159,23 +159,29 @@ class TienGowAnalyzer {
     }
 
     /**
-     * 計算單個排列對所有莊家排列的勝率
+     * 計算單個排列對所有莊家排列的勝率（支援加權計算）
      */
     calculateArrangementWinRate(myArrangement, dealerArrangements) {
         const [myFront, myBack] = myArrangement;
         const myFrontScore = this.getPairScore(myFront[0], myFront[1]);
         const myBackScore = this.getPairScore(myBack[0], myBack[1]);
         
-        const total = dealerArrangements.length;
-        if (total === 0) {
+        if (dealerArrangements.length === 0) {
             return { win: 0, tie: 0, lose: 0, expectedValue: 0 };
         }
         
-        let winCount = 0;
-        let tieCount = 0;
-        let loseCount = 0;
+        let totalWeight = 0;
+        let weightedWinCount = 0;
+        let weightedTieCount = 0;
+        let weightedLoseCount = 0;
         
-        for (let dealerArrangement of dealerArrangements) {
+        for (let dealerData of dealerArrangements) {
+            // 支援新的加權格式 {arrangement, weight} 和舊的格式（純排列）
+            const dealerArrangement = dealerData.arrangement || dealerData;
+            const weight = dealerData.weight || 1;
+            
+            totalWeight += weight;
+            
             const [dealerFront, dealerBack] = dealerArrangement;
             const dealerFrontScore = this.getPairScore(dealerFront[0], dealerFront[1]);
             const dealerBackScore = this.getPairScore(dealerBack[0], dealerBack[1]);
@@ -190,19 +196,19 @@ class TienGowAnalyzer {
             
             // 總體勝負判定（按照天九牌規則）
             if ((frontWin && backWin) || (frontWin && backTie) || (frontTie && backWin)) {
-                winCount++;
+                weightedWinCount += weight;
             } else if ((!frontWin && !frontTie && !backWin && !backTie) ||
                       (!frontWin && !frontTie && backTie) ||
                       (frontTie && !backWin && !backTie)) {
-                loseCount++;
+                weightedLoseCount += weight;
             } else {
-                tieCount++;
+                weightedTieCount += weight;
             }
         }
         
-        const winRate = winCount / total;
-        const tieRate = tieCount / total;
-        const loseRate = loseCount / total;
+        const winRate = weightedWinCount / totalWeight;
+        const tieRate = weightedTieCount / totalWeight;
+        const loseRate = weightedLoseCount / totalWeight;
         const expectedValue = winRate * 1 + tieRate * 0 + loseRate * (-1);
         
         return {
@@ -283,15 +289,22 @@ class TienGowAnalyzer {
         const allDealerHands = this.combinations(remainingCards, 4);
         console.log(`共有${allDealerHands.length}種可能的莊家手牌`);
         
-        // 獲取所有莊家的有效排列
+        // 獲取所有莊家的有效排列（加權處理）
         const allDealerArrangements = [];
         
         for (let dealerHand of allDealerHands) {
             const validArrangements = this.getValidArrangements(dealerHand);
-            allDealerArrangements.push(...validArrangements);
+            const weight = 1 / validArrangements.length; // 權重 = 1/該手牌的有效排列數
+            
+            for (let arrangement of validArrangements) {
+                allDealerArrangements.push({
+                    arrangement: arrangement,
+                    weight: weight
+                });
+            }
         }
         
-        console.log(`莊家共有${allDealerArrangements.length}種可能的有效排列`);
+        console.log(`莊家共有${allDealerArrangements.length}種可能的有效排列（已加權處理）`);
         
         // 計算每個我的排列的勝率
         const results = [];
@@ -301,17 +314,29 @@ class TienGowAnalyzer {
             const myFrontScore = this.getPairScore(myFront[0], myFront[1]);
             const myBackScore = this.getPairScore(myBack[0], myBack[1]);
             
-            // 計算前後對分別的勝率（用於顯示）
-            const dealerFronts = allDealerArrangements.map(arr => arr[0]);
-            const dealerBacks = allDealerArrangements.map(arr => arr[1]);
+            // 計算前後對分別的勝率（用於顯示，加權計算）
+            let totalWeight = 0;
+            let frontWinWeight = 0;
+            let backWinWeight = 0;
             
-            const frontWins = dealerFronts.filter(front => 
-                myFrontScore > this.getPairScore(front[0], front[1])).length;
-            const backWins = dealerBacks.filter(back => 
-                myBackScore > this.getPairScore(back[0], back[1])).length;
+            for (let dealerData of allDealerArrangements) {
+                const arrangement = dealerData.arrangement;
+                const weight = dealerData.weight;
+                totalWeight += weight;
+                
+                const dealerFrontScore = this.getPairScore(arrangement[0][0], arrangement[0][1]);
+                const dealerBackScore = this.getPairScore(arrangement[1][0], arrangement[1][1]);
+                
+                if (myFrontScore > dealerFrontScore) {
+                    frontWinWeight += weight;
+                }
+                if (myBackScore > dealerBackScore) {
+                    backWinWeight += weight;
+                }
+            }
             
-            const frontWinRate = dealerFronts.length > 0 ? frontWins / dealerFronts.length : 0;
-            const backWinRate = dealerBacks.length > 0 ? backWins / dealerBacks.length : 0;
+            const frontWinRate = totalWeight > 0 ? frontWinWeight / totalWeight : 0;
+            const backWinRate = totalWeight > 0 ? backWinWeight / totalWeight : 0;
             
             // 計算整體勝率
             const overallRates = this.calculateArrangementWinRate(myArrangement, allDealerArrangements);
