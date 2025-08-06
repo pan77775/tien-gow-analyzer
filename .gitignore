@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Python
+*.py
+*.pyc
+__pycache__/
+
+# Development
+serve.py
+start.py
+
+# Logs
+*.log
