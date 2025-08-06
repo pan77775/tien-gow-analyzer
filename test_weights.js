@@ -47,7 +47,15 @@ function testWeights() {
             console.log(`✅ 分析成功`);
             console.log(`最佳期望值: ${result.best.expectedValue.toFixed(4)}`);
             console.log(`總組合數: ${result.all.length}`);
-            console.log(`權重修正已生效`);
+            console.log(`權重修正 + 策略優化已生效`);
+            
+            // 顯示玩家的所有組合
+            console.log('\n--- 玩家可見組合 ---');
+            result.all.forEach((combo, index) => {
+                const frontPair = combo.front.join('+');
+                const backPair = combo.back.join('+');
+                console.log(`組合${index+1}: 前對(${frontPair})=${combo.frontScore}, 後對(${backPair})=${combo.backScore}, 期望值=${combo.expectedValue.toFixed(4)}`);
+            });
         } else {
             console.log('❌ 分析失敗');
         }

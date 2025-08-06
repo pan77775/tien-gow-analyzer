@@ -556,10 +556,10 @@ class MobileTienGowUI {
                         組合 ${index + 1} (期望值: ${arrangement.expectedValue.toFixed(3)})
                     </div>
                     <div class="pair-display">
-                        前對: ${frontDisplay} 勝率: ${(arrangement.frontWinRate * 100).toFixed(1)}%
+                        前對: ${frontDisplay} 勝率: ${(arrangement.frontWinRate * 100).toFixed(2)}%
                     </div>
                     <div class="pair-display">
-                        後對: ${backDisplay} 勝率: ${(arrangement.backWinRate * 100).toFixed(1)}%
+                        後對: ${backDisplay} 勝率: ${(arrangement.backWinRate * 100).toFixed(2)}%
                     </div>
                     <div class="stats">
                         勝率: ${(arrangement.winProb * 100).toFixed(1)}% | 
