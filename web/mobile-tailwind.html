@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>猴子助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 自定義樣式 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+        }
+        
+        @media (max-width: 640px) {
+            .card-grid {
+                gap: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen" style="overflow-y: scroll;">
+    <!-- 頂部標題 -->
+    <div class="sticky top-0 z-50 bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
+        <h1 class="text-xl font-bold text-center py-4">🐒 猴子助手</h1>
+    </div>
+    
+    <div class="container mx-auto px-1 pb-24 max-w-xl">
+        <!-- 牌選擇區域 -->
+        <div class="bg-white rounded-xl shadow-md mt-4 overflow-hidden">
+            <div class="p-3">
+                <!-- 選擇模式切換 -->
+                <div class="flex gap-2 mb-4 p-3 bg-gray-100 rounded-lg">
+                    <button class="mode-btn flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 bg-blue-500 text-white" data-selection="hand">
+                        手牌 <span class="text-xs">(4張)</span>
+                    </button>
+                    <button class="mode-btn flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 bg-white text-gray-700 border-2 border-gray-300" data-selection="known">
+                        已知牌 <span class="text-xs">(最多16張)</span>
+                    </button>
+                </div>
+                
+                <!-- 牌網格 -->
+                <div class="card-grid gap-0.5 p-1 bg-gray-50 rounded-lg" id="cardGrid"></div>
+                
+                <!-- 操作按鈕 -->
+                <div class="flex gap-3 mt-4">
+                    <button class="flex-1 py-3 px-4 bg-gray-200 text-gray-700 rounded-lg font-semibold transition-all duration-200 hover:bg-gray-300 active:scale-95" onclick="clearCurrentSelection()">
+                        清空
+                    </button>
+                    <button class="flex-1 py-3 px-4 bg-blue-500 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-blue-600 active:scale-95" onclick="randomCurrentSelection()">
+                        隨機選擇
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 分析結果 -->
+        <div class="hidden mt-3" id="analysisResults">
+            <div id="resultsContent">
+                <div class="text-center py-8 text-gray-500" id="loadingIndicator">
+                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-3"></div>
+                    <div>分析中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 底部操作欄 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg px-4 py-3 flex gap-3">
+        <button class="flex-1 py-3 px-4 bg-red-500 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-red-600 active:scale-95" onclick="resetAll()">
+            重置
+        </button>
+        <button class="flex-1 py-3 px-4 bg-blue-500 text-white rounded-lg font-semibold transition-all duration-200 hover:bg-blue-600 active:scale-95 disabled:bg-gray-300 disabled:cursor-not-allowed" id="analyzeBtn" onclick="analyzeCards()" disabled>
+            分析組合
+        </button>
+    </div>
+    
+    <script src="scripts/tien-gow.js"></script>
+    <script src="scripts/mobile-ui-tailwind.js"></script>
+    
+    <script>
+        // Tailwind 特定的樣式調整
+        document.addEventListener('DOMContentLoaded', function() {
+            // 覆寫一些樣式以配合 Tailwind
+            const style = document.createElement('style');
+            style.textContent = `
+                .card-item {
+                    background: white;
+                    border: 2px solid #e5e7eb;
+                    border-radius: 0.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.875rem;
+                    font-weight: 700;
+                    cursor: pointer;
+                    transition: all 200ms;
+                    aspect-ratio: 1;
+                    min-height: 3rem;
+                }
+                
+                .card-item:hover {
+                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+                    transform: translateY(-2px);
+                }
+                
+                .card-item:active {
+                    transform: scale(0.95);
+                }
+                
+                .card-item.selected.hand-mode {
+                    background: #3b82f6;
+                    color: white;
+                    border-color: #3b82f6;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+                
+                .card-item.selected.known-mode {
+                    background: #ef4444;
+                    color: white;
+                    border-color: #ef4444;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                }
+                
+                .card-item.disabled {
+                    opacity: 0.4;
+                    cursor: not-allowed;
+                }
+                
+                .card-item.disabled:hover {
+                    box-shadow: none;
+                    transform: none;
+                }
+                
+                .selected-chip {
+                    @apply bg-blue-500 text-white px-3 py-1 rounded-full text-sm font-medium;
+                }
+                
+                .selected-count {
+                    @apply bg-gray-400 text-white px-2 py-0.5 rounded-lg text-xs font-bold ml-auto;
+                }
+                
+                .combination-item {
+                    border-radius: 0.5rem;
+                    padding: 1rem;
+                    margin-bottom: 0.75rem;
+                    border: 1px solid #e5e7eb;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+                
+                .best-combination {
+                    background-color: #dbeafe;
+                    border-color: #93c5fd;
+                    border-width: 2px;
+                }
+                
+                .regular-combination {
+                    background-color: #f9fafb;
+                    border-color: #e5e7eb;
+                }
+                
+                /* 確保容器寬度穩定 */
+                .container {
+                    width: 100%;
+                    max-width: 36rem;
+                }
+                
+                @media (min-width: 768px) {
+                    .container {
+                        max-width: 36rem;
+                    }
+                }
+                
+                .combination-title {
+                    @apply font-bold text-gray-800 mb-2;
+                }
+                
+                .pair-display {
+                    @apply text-gray-700 my-1;
+                }
+                
+                .stats {
+                    @apply text-sm text-gray-500 mt-2;
+                }
+                
+                .alert {
+                    @apply p-3 rounded-lg mb-4 text-sm font-medium;
+                }
+                
+                .alert-error {
+                    @apply bg-red-100 text-red-700 border border-red-200;
+                }
+                
+                .alert-success {
+                    @apply bg-green-100 text-green-700 border border-green-200;
+                }
+                
+                
+                @media (max-width: 640px) {
+                    .card-item {
+                        font-size: 0.75rem;
+                        min-height: 2.5rem;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        });
+    </script>
+</body>
+</html>

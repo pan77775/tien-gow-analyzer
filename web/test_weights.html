@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>權重修正測試</title>
+</head>
+<body>
+    <h1>權重修正測試</h1>
+    <div id="output"></div>
+
+    <script src="web/scripts/tien-gow.js"></script>
+    <script>
+        async function testWeights() {
+            try {
+                // 載入分數表
+                const response = await fetch('web/data/rankings.json');
+                const rankings = await response.json();
+                
+                // 創建分析器
+                const analyzer = new TienGowAnalyzer(rankings);
+                
+                // 測試手牌
+                const testHand = ['天', '地', '人', '和'];
+                
+                console.log('開始權重修正測試...');
+                console.log('測試手牌:', testHand);
+                
+                // 分析
+                const result = analyzer.analyzeHand(testHand);
+                
+                if (result) {
+                    console.log('最佳組合期望值:', result.best.expectedValue);
+                    console.log('總共有效組合數:', result.all.length);
+                    
+                    document.getElementById('output').innerHTML = `
+                        <h2>測試結果</h2>
+                        <p>手牌: ${testHand.join(', ')}</p>
+                        <p>最佳期望值: ${result.best.expectedValue.toFixed(4)}</p>
+                        <p>有效組合數: ${result.all.length}</p>
+                        <p>權重修正已啟用 ✅</p>
+                    `;
+                } else {
+                    document.getElementById('output').innerHTML = '<p>分析失敗 ❌</p>';
+                }
+            } catch (error) {
+                console.error('測試錯誤:', error);
+                document.getElementById('output').innerHTML = `<p>錯誤: ${error.message}</p>`;
+            }
+        }
+        
+        // 頁面載入後執行測試
+        window.onload = testWeights;
+    </script>
+</body>
+</html>
