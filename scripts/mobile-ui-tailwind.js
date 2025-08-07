@@ -354,6 +354,11 @@ class MobileTienGowUI {
                 } else if (isKnownCard) {
                     cardElement.classList.add('known-mode');
                 }
+                
+                // 調試信息
+                if (cardType === '猴' && isSelected) {
+                    console.log(`猴牌(${cardIndex}): isHandCard=${isHandCard}, isKnownCard=${isKnownCard}, classes=${cardElement.className}`);
+                }
             } else {
                 cardElement.classList.remove('selected');
             }
