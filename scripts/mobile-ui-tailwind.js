@@ -127,7 +127,9 @@ class MobileTienGowUI {
         document.querySelectorAll('[data-selection]').forEach(btn => {
             const isActive = btn.dataset.selection === mode;
             if (isActive) {
-                btn.className = 'mode-btn flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 bg-blue-500 text-white';
+                // 已知牌用紅色，手牌用藍色
+                const bgColor = mode === 'known' ? 'bg-red-500' : 'bg-blue-500';
+                btn.className = `mode-btn flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 ${bgColor} text-white`;
             } else {
                 btn.className = 'mode-btn flex-1 py-3 px-4 rounded-lg font-semibold text-sm transition-all duration-200 bg-white text-gray-700 border-2 border-gray-300';
             }
@@ -333,7 +335,17 @@ class MobileTienGowUI {
                 isDisabled = (totalUsed >= 2 && !isSelected) || this.selectedCardIndices.hand.has(cardIndex);
             }
             
-            cardElement.classList.toggle('selected', isSelected);
+            // 移除所有模式類
+            cardElement.classList.remove('hand-mode', 'known-mode');
+            
+            // 根據選擇模式添加對應的類
+            if (isSelected) {
+                cardElement.classList.add('selected');
+                cardElement.classList.add(this.selectionMode === 'hand' ? 'hand-mode' : 'known-mode');
+            } else {
+                cardElement.classList.remove('selected');
+            }
+            
             cardElement.classList.toggle('disabled', isDisabled);
         });
     }
@@ -402,11 +414,24 @@ class MobileTienGowUI {
         const shuffled = availableIndices.sort(() => Math.random() - 0.5);
         const selectedIndices = shuffled.slice(0, 16);
         
+        // 使用 Map 來計算每種牌型的數量
+        const cardTypeCount = new Map();
+        
         // 根據索引設置選中狀態
         selectedIndices.forEach(index => {
             this.selectedCardIndices.known.add(index);
             const cardType = this.allCardTypes[Math.floor(index / 2)];
-            this.knownCards.push(cardType);
+            
+            // 計算每種牌型出現的次數
+            const count = cardTypeCount.get(cardType) || 0;
+            cardTypeCount.set(cardType, count + 1);
+        });
+        
+        // 根據計數添加牌到 knownCards
+        cardTypeCount.forEach((count, cardType) => {
+            for (let i = 0; i < count; i++) {
+                this.knownCards.push(cardType);
+            }
         });
         
         this.updateCardCounts();
@@ -435,11 +460,24 @@ class MobileTienGowUI {
         const shuffled = availableIndices.sort(() => Math.random() - 0.5);
         const selectedIndices = shuffled.slice(0, 4);
         
+        // 使用 Map 來計算每種牌型的數量
+        const cardTypeCount = new Map();
+        
         // 根據索引設置選中狀態
         selectedIndices.forEach(index => {
             this.selectedCardIndices.hand.add(index);
             const cardType = this.allCardTypes[Math.floor(index / 2)];
-            this.handCards.push(cardType);
+            
+            // 計算每種牌型出現的次數
+            const count = cardTypeCount.get(cardType) || 0;
+            cardTypeCount.set(cardType, count + 1);
+        });
+        
+        // 根據計數添加牌到 handCards
+        cardTypeCount.forEach((count, cardType) => {
+            for (let i = 0; i < count; i++) {
+                this.handCards.push(cardType);
+            }
         });
         
         this.updateCardCounts();
@@ -556,10 +594,10 @@ class MobileTienGowUI {
                         組合 ${index + 1} (期望值: ${arrangement.expectedValue.toFixed(3)})
                     </div>
                     <div class="pair-display">
-                        前對: ${frontDisplay} 勝率: ${(arrangement.frontWinRate * 100).toFixed(2)}%
+                        前對: ${frontDisplay} 勝率: ${(arrangement.frontWinRate * 100).toFixed(1)}%
                     </div>
                     <div class="pair-display">
-                        後對: ${backDisplay} 勝率: ${(arrangement.backWinRate * 100).toFixed(2)}%
+                        後對: ${backDisplay} 勝率: ${(arrangement.backWinRate * 100).toFixed(1)}%
                     </div>
                     <div class="stats">
                         勝率: ${(arrangement.winProb * 100).toFixed(1)}% | 
