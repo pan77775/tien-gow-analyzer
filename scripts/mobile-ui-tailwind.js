@@ -341,10 +341,19 @@ class MobileTienGowUI {
             // 移除所有模式類
             cardElement.classList.remove('hand-mode', 'known-mode');
             
-            // 根據選擇模式添加對應的類
+            // 根據卡片實際屬於的類型來設置顏色
             if (isSelected) {
                 cardElement.classList.add('selected');
-                cardElement.classList.add(this.selectionMode === 'hand' ? 'hand-mode' : 'known-mode');
+                
+                // 檢查這張卡片是手牌還是已知牌
+                const isHandCard = this.selectedCardIndices.hand.has(cardIndex);
+                const isKnownCard = this.selectedCardIndices.known.has(cardIndex);
+                
+                if (isHandCard) {
+                    cardElement.classList.add('hand-mode');
+                } else if (isKnownCard) {
+                    cardElement.classList.add('known-mode');
+                }
             } else {
                 cardElement.classList.remove('selected');
             }
