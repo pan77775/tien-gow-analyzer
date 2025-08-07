@@ -7,7 +7,7 @@ class TienGowAnalyzer {
     constructor(rankings, pairNames = null) {
         // 16種牌型，每種2張，共32張牌
         this.allCards = ['天', '地', '人', '和', '長10', '長6', '長4', 
-                        '短11', '短10', '短7', '短6', '雜9', '雜8', '雜7', '雜6', '雜5'];
+                        '短11', '短10', '短7', '短6', '雜9', '雜8', '雜7', '猴', '雜5'];
         
         this.rankings = rankings; // 牌型分數表
         this.pairNames = pairNames || {}; // 對子名稱表
