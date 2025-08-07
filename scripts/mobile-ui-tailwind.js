@@ -5,7 +5,7 @@
 class MobileTienGowUI {
     constructor() {
         this.analyzer = null;
-        this.selectionMode = 'hand'; // 'hand' | 'known' - 當前選擇模式
+        this.selectionMode = 'known'; // 'hand' | 'known' - 當前選擇模式（預設為已知牌）
         this.knownCards = []; // 已知牌
         this.handCards = []; // 手牌
         this.selectedCardIndices = { known: new Set(), hand: new Set() }; // 追蹤選中的牌索引
@@ -36,6 +36,9 @@ class MobileTienGowUI {
             
             // 初始化牌網格
             this.initCardGrids();
+            
+            // 初始化選擇模式按鈕狀態
+            this.switchSelectionMode(this.selectionMode);
             
             // 更新UI狀態
             this.updateUI();
